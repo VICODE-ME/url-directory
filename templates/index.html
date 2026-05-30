@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>classic URL · bookmark directory</title>
+    <!-- Favicon from static folder (replace with your own) -->
+    <link rel="icon" type="image/png" href="/static/dictionary.png">
+    <style>
+        /* (copy all your CSS from previous version – it's the same) */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root { --bg-page: #f2f0ea; --bg-surface: #ffffff; --text-primary: #1f2a3a; --text-secondary: #3e4a5b; --border-light: #d4d8dd; --accent: #5b4b3c; --accent-light: #7f6b58; --hover-row: #f0ede8; --shadow: 0 8px 24px rgba(0, 0, 0, 0.05); --input-bg: #ffffff; --btn-bg: #e7e5e0; --btn-hover: #dad6cf; --table-header-bg: #edebe6; --table-border: #cfccc4; --modal-overlay: rgba(0,0,0,0.2); --filter-input-bg: #f9f9f7; }
+        body.dark { --bg-page: #1b1e24; --bg-surface: #2a2e36; --text-primary: #eaeef2; --text-secondary: #b8c2cc; --border-light: #404a58; --accent: #b7a58b; --accent-light: #d2c2ae; --hover-row: #353f4b; --shadow: 0 8px 24px rgba(0, 0, 0, 0.6); --input-bg: #353f4b; --btn-bg: #3d4653; --btn-hover: #505b6b; --table-header-bg: #313a45; --table-border: #4a5563; --modal-overlay: rgba(0,0,0,0.7); --filter-input-bg: #2f3843; }
+        body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-page); color: var(--text-primary); min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 8px; transition: background-color 0.2s, color 0.2s; }
+        .portal { width: 100%; background-color: var(--bg-surface); border-radius: 24px; box-shadow: var(--shadow); overflow: hidden; border: 1px solid var(--border-light); display: flex; flex-direction: column; height: calc(100vh - 16px); }
+        .portal-header { padding: 18px 24px; background: var(--bg-surface); border-bottom: 1px solid var(--border-light); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+        .title-section h1 { font-weight: 500; font-size: 1.8rem; letter-spacing: -0.5px; color: var(--accent); }
+        .title-section .legend { font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px; }
+        .toolbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        button { background-color: var(--btn-bg); border: 1px solid var(--border-light); color: var(--text-primary); padding: 10px 20px; border-radius: 40px; font-size: 0.95rem; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.1s ease; }
+        button:hover { background-color: var(--btn-hover); border-color: var(--accent-light); }
+        button.primary { background-color: var(--accent); color: white; border-color: var(--accent); }
+        button.primary:hover { background-color: var(--accent-light); }
+        .theme-toggle { background: var(--btn-bg); border-radius: 40px; padding: 4px; display: flex; border: 1px solid var(--border-light); }
+        .theme-toggle button { background: transparent; border: none; padding: 8px 18px; border-radius: 30px; font-size: 0.9rem; }
+        .theme-toggle button.active { background: var(--accent); color: white; }
+        .portal-main { padding: 20px 24px 24px; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 20px; }
+        .search-section { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+        .global-search-box { flex: 2 1 300px; display: flex; background: var(--input-bg); border: 1px solid var(--border-light); border-radius: 48px; padding: 2px 2px 2px 20px; align-items: center; }
+        .global-search-box input { flex: 1; background: transparent; border: none; padding: 12px 8px 12px 0; font-size: 1rem; color: var(--text-primary); outline: none; }
+        .global-search-box span { padding: 0 18px; color: var(--text-secondary); font-size: 1.2rem; }
+        .export-btn { white-space: nowrap; }
+        .table-wrapper { border: 1px solid var(--table-border); border-radius: 20px; overflow: auto; background: var(--bg-surface); flex: 1; min-height: 300px; box-shadow: inset 0 2px 6px rgba(0,0,0,0.02); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.95rem; min-width: 1000px; }
+        th { background-color: var(--table-header-bg); color: var(--text-primary); font-weight: 500; padding: 14px 12px 8px; text-align: left; white-space: nowrap; position: relative; border-bottom: 1px solid var(--border-light); user-select: none; }
+        th.sortable { cursor: pointer; }
+        th.sortable:hover { background-color: var(--btn-hover); }
+        .sort-indicator { margin-left: 8px; display: inline-block; opacity: 0.6; }
+        .filter-row th { padding: 8px 12px 12px; background-color: var(--bg-surface); border-top: none; }
+        .filter-row input { width: 100%; padding: 10px 12px; background-color: var(--filter-input-bg); border: 1px solid var(--border-light); border-radius: 30px; color: var(--text-primary); font-size: 0.9rem; }
+        .filter-row input::placeholder { color: var(--text-secondary); opacity: 0.7; }
+        .filter-row input:focus { outline: 2px solid var(--accent-light); border-color: transparent; }
+        td { padding: 14px 12px; border-bottom: 1px solid var(--border-light); vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background-color: var(--hover-row); }
+        .url-cell { max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .url-cell a { color: var(--accent); text-decoration: none; }
+        .url-cell a:hover { text-decoration: underline; }
+        .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .actions button { padding: 6px 12px; background: transparent; border: 1px solid var(--border-light); border-radius: 30px; font-size: 0.85rem; white-space: nowrap; }
+        .actions button:hover { background: var(--btn-bg); }
+        .empty-row td { text-align: center; padding: 48px 20px; color: var(--text-secondary); font-style: italic; }
+        #bookmarkDialog { background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-light); border-radius: 28px; padding: 0; width: min(450px, 90%); box-shadow: var(--shadow); margin: auto; }
+        #bookmarkDialog::backdrop { background: var(--modal-overlay); backdrop-filter: blur(3px); }
+        .dialog-content { padding: 28px; }
+        .dialog-content h2 { margin-bottom: 24px; color: var(--accent); font-weight: 450; }
+        .form-row { margin-bottom: 20px; }
+        .form-row label { display: block; margin-bottom: 6px; font-size: 0.9rem; color: var(--text-secondary); }
+        .form-row input { width: 100%; padding: 12px 16px; background: var(--input-bg); border: 1px solid var(--border-light); border-radius: 40px; font-size: 1rem; color: var(--text-primary); }
+        .form-row input:focus { outline: 2px solid var(--accent-light); border-color: transparent; }
+        .dialog-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 32px; }
+        .dialog-actions button { padding: 10px 24px; }
+        .footer-stats { display: flex; justify-content: space-between; align-items: center; color: var(--text-secondary); font-size: 0.9rem; margin-top: 8px; }
+        .badge { background: var(--btn-bg); padding: 4px 12px; border-radius: 40px; }
+        /* Mobile responsiveness */
+        @media (max-width: 600px) {
+            .portal-header {
+                padding: 12px 16px;
+            }
+            .title-section h1 {
+                font-size: 1.4rem;
+            }
+            .legend {
+                font-size: 0.75rem;
+            }
+            .toolbar {
+                gap: 8px;
+            }
+            .toolbar button {
+                padding: 8px 14px;
+                font-size: 0.85rem;
+            }
+            .theme-toggle button {
+                padding: 6px 12px;
+            }
+            .portal-main {
+                padding: 12px 16px;
+            }
+            .global-search-box input {
+                padding: 8px 8px 8px 0;
+                font-size: 0.9rem;
+            }
+            .global-search-box span {
+                padding: 0 12px;
+            }
+            .table-wrapper {
+                border-radius: 16px;
+            }
+            th {
+                padding: 10px 8px;
+                font-size: 0.85rem;
+            }
+            .filter-row input {
+                padding: 6px 8px;
+                font-size: 0.8rem;
+            }
+            td {
+                padding: 10px 8px;
+                font-size: 0.85rem;
+            }
+            .actions button {
+                padding: 4px 8px;
+                font-size: 0.75rem;
+            }
+            .url-cell {
+                max-width: 180px; /* smaller on mobile */
+            }
+            .footer-stats {
+                font-size: 0.8rem;
+            }
+            .badge {
+                padding: 2px 8px;
+            }
+            /* Modal adjustments */
+            .dialog-content {
+                padding: 20px;
+            }
+            .dialog-content h2 {
+                font-size: 1.3rem;
+            }
+            .form-row input {
+                padding: 10px 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="portal">
+        <div class="portal-header">
+            <div class="title-section">
+                <h1>🗂️ bookmark directory</h1>
+                <div class="legend">shared (Flask+SQLite) · full‑screen · column filters & sort · open button</div>
+            </div>
+            <div class="toolbar">
+                <div class="theme-toggle" id="themeToggle">
+                    <button class="active" data-theme="light">☀️ light</button>
+                    <button data-theme="dark">🌙 dark</button>
+                </div>
+                <button class="primary" id="addBookmarkBtn">➕ add bookmark</button>
+                <button id="exportBtn" class="export-btn">⬇️ export .json</button>
+            </div>
+        </div>
+
+        <div class="portal-main">
+            <div class="search-section">
+                <div class="global-search-box">
+                    <input type="text" id="globalSearch" placeholder="global filter (name, url, date...)" autocomplete="off">
+                    <span>🔍</span>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table id="bookmarkTable">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-column="name">site name <span class="sort-indicator" id="sort-name">↕️</span></th>
+                            <th class="sortable" data-column="url">url <span class="sort-indicator" id="sort-url">↕️</span></th>
+                            <th class="sortable" data-column="dateAdded">date added <span class="sort-indicator" id="sort-dateAdded">↕️</span></th>
+                            <th class="sortable" data-column="dateModified">last modified <span class="sort-indicator" id="sort-dateModified">↕️</span></th>
+                            <th>actions</th>
+                        </tr>
+                        <tr class="filter-row">
+                            <th><input type="text" id="filterName" placeholder="filter name" data-filter="name"></th>
+                            <th><input type="text" id="filterUrl" placeholder="filter url" data-filter="url"></th>
+                            <th><input type="text" id="filterDateAdded" placeholder="filter added" data-filter="dateAdded"></th>
+                            <th><input type="text" id="filterDateModified" placeholder="filter modified" data-filter="dateModified"></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- dynamic rows -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="footer-stats">
+                <span id="counter">0 bookmarks</span>
+                <span class="badge">open · edit · delete</span>
+            </div>
+        </div>
+    </div>
+
+    <dialog id="bookmarkDialog">
+        <div class="dialog-content">
+            <h2 id="modalTitle">➕ new bookmark</h2>
+            <form id="bookmarkForm">
+                <div class="form-row">
+                    <label for="siteName">site name</label>
+                    <input type="text" id="siteName" name="name" placeholder="e.g., Hacker News" required>
+                </div>
+                <div class="form-row">
+                    <label for="siteUrl">url</label>
+                    <input type="url" id="siteUrl" name="url" placeholder="https://news.ycombinator.com" required>
+                </div>
+                <input type="hidden" id="editId" value="">
+                <div class="dialog-actions">
+                    <button type="button" id="cancelDialog">cancel</button>
+                    <button type="submit" class="primary" id="saveBtn">💾 save</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+
+    <script>
+        (function() {
+            // ----- API calls (relative to Flask) -----
+            const API_BASE = '/api/bookmarks';
+
+            let bookmarks = [];
+
+            async function loadBookmarks() {
+                try {
+                    const response = await fetch(API_BASE);
+                    bookmarks = await response.json();
+                    applyFiltersAndRender();
+                } catch (err) {
+                    console.error('Failed to load bookmarks', err);
+                }
+            }
+
+            async function saveBookmark(bookmark) {
+                if (bookmark.id) {
+                    const response = await fetch(`${API_BASE}/${bookmark.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(bookmark)
+                    });
+                    if (response.ok) {
+                        const updated = await response.json();
+                        const index = bookmarks.findIndex(b => b.id === bookmark.id);
+                        if (index !== -1) bookmarks[index] = updated;
+                    }
+                } else {
+                    const response = await fetch(API_BASE, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(bookmark)
+                    });
+                    if (response.ok) {
+                        const created = await response.json();
+                        bookmarks.push(created);
+                    }
+                }
+                applyFiltersAndRender();
+            }
+
+
+            async function deleteBookmark(id) {
+                const response = await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    bookmarks = bookmarks.filter(b => b.id !== id);
+                    applyFiltersAndRender();
+                }
+            }
+
+            // theme persistence (localStorage)
+            const THEME_KEY = 'preferred_theme';
+            function initTheme() {
+                const saved = localStorage.getItem(THEME_KEY);
+                if (saved === 'dark') {
+                    document.body.classList.add('dark');
+                    document.querySelector('#themeToggle button[data-theme="dark"]').classList.add('active');
+                    document.querySelector('#themeToggle button[data-theme="light"]').classList.remove('active');
+                } else {
+                    document.body.classList.remove('dark');
+                    document.querySelector('#themeToggle button[data-theme="light"]').classList.add('active');
+                    document.querySelector('#themeToggle button[data-theme="dark"]').classList.remove('active');
+                }
+            }
+
+            document.querySelectorAll('#themeToggle button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const theme = btn.getAttribute('data-theme');
+                    document.body.classList.toggle('dark', theme === 'dark');
+                    localStorage.setItem(THEME_KEY, theme);
+                    document.querySelectorAll('#themeToggle button').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+            });
+
+            // filter & sort state (same as before)
+            let globalSearch = '';
+            let columnFilters = { name: '', url: '', dateAdded: '', dateModified: '' };
+            let sortColumn = 'dateModified';
+            let sortDirection = 'desc';
+
+            const globalInput = document.getElementById('globalSearch');
+            const filterName = document.getElementById('filterName');
+            const filterUrl = document.getElementById('filterUrl');
+            const filterDateAdded = document.getElementById('filterDateAdded');
+            const filterDateModified = document.getElementById('filterDateModified');
+            const sortIndicators = {
+                name: document.getElementById('sort-name'),
+                url: document.getElementById('sort-url'),
+                dateAdded: document.getElementById('sort-dateAdded'),
+                dateModified: document.getElementById('sort-dateModified')
+            };
+
+            function setupFilters() {
+                globalInput.addEventListener('input', (e) => {
+                    globalSearch = e.target.value.toLowerCase();
+                    applyFiltersAndRender();
+                });
+                filterName.addEventListener('input', (e) => {
+                    columnFilters.name = e.target.value.toLowerCase();
+                    applyFiltersAndRender();
+                });
+                filterUrl.addEventListener('input', (e) => {
+                    columnFilters.url = e.target.value.toLowerCase();
+                    applyFiltersAndRender();
+                });
+                filterDateAdded.addEventListener('input', (e) => {
+                    columnFilters.dateAdded = e.target.value.toLowerCase();
+                    applyFiltersAndRender();
+                });
+                filterDateModified.addEventListener('input', (e) => {
+                    columnFilters.dateModified = e.target.value.toLowerCase();
+                    applyFiltersAndRender();
+                });
+            }
+
+            document.querySelectorAll('th.sortable').forEach(th => {
+                th.addEventListener('click', () => {
+                    const col = th.dataset.column;
+                    if (sortColumn === col) {
+                        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        sortColumn = col;
+                        sortDirection = 'asc';
+                    }
+                    updateSortIndicators();
+                    applyFiltersAndRender();
+                });
+            });
+
+            function updateSortIndicators() {
+                for (let [col, el] of Object.entries(sortIndicators)) {
+                    el.textContent = '↕️';
+                }
+                if (sortColumn && sortIndicators[sortColumn]) {
+                    sortIndicators[sortColumn].textContent = sortDirection === 'asc' ? '⬆️' : '⬇️';
+                }
+            }
+
+            function filterAndSortBookmarks() {
+                let filtered = bookmarks.filter(bookmark => {
+                    const globalMatch = globalSearch === '' || 
+                        bookmark.name.toLowerCase().includes(globalSearch) ||
+                        bookmark.url.toLowerCase().includes(globalSearch) ||
+                        formatDate(bookmark.dateAdded).toLowerCase().includes(globalSearch) ||
+                        formatDate(bookmark.dateModified).toLowerCase().includes(globalSearch);
+                    if (!globalMatch) return false;
+
+                    if (columnFilters.name && !bookmark.name.toLowerCase().includes(columnFilters.name)) return false;
+                    if (columnFilters.url && !bookmark.url.toLowerCase().includes(columnFilters.url)) return false;
+                    if (columnFilters.dateAdded && !formatDate(bookmark.dateAdded).toLowerCase().includes(columnFilters.dateAdded)) return false;
+                    if (columnFilters.dateModified && !formatDate(bookmark.dateModified).toLowerCase().includes(columnFilters.dateModified)) return false;
+
+                    return true;
+                });
+
+                filtered.sort((a, b) => {
+                    let valA, valB;
+                    if (sortColumn === 'name') {
+                        valA = a.name.toLowerCase();
+                        valB = b.name.toLowerCase();
+                    } else if (sortColumn === 'url') {
+                        valA = a.url.toLowerCase();
+                        valB = b.url.toLowerCase();
+                    } else if (sortColumn === 'dateAdded') {
+                        valA = new Date(a.dateAdded).getTime();
+                        valB = new Date(b.dateAdded).getTime();
+                    } else if (sortColumn === 'dateModified') {
+                        valA = new Date(a.dateModified).getTime();
+                        valB = new Date(b.dateModified).getTime();
+                    } else {
+                        return 0;
+                    }
+
+                    if (sortDirection === 'asc') {
+                        return valA > valB ? 1 : -1;
+                    } else {
+                        return valA < valB ? 1 : -1;
+                    }
+                });
+
+                return filtered;
+            }
+
+            function formatDate(iso) {
+                if (!iso) return '—';
+                const d = new Date(iso);
+                return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            }
+
+            function escapeHtml(unsafe) {
+                if (!unsafe) return '';
+                return unsafe.replace(/[&<>"']/g, function(m) {
+                    if(m === '&') return '&amp;'; if(m === '<') return '&lt;'; if(m === '>') return '&gt;'; if(m === '"') return '&quot;'; return '&#039;';
+                });
+            }
+
+            function renderTable() {
+                const filtered = filterAndSortBookmarks();
+                const tbody = document.getElementById('tableBody');
+
+                if (filtered.length === 0) {
+                    tbody.innerHTML = `<tr class="empty-row"><td colspan="5">✨ no matching bookmarks — adjust filters or add new ✨</td></tr>`;
+                } else {
+                    let html = '';
+                    filtered.forEach(b => {
+                        html += `<tr data-id="${b.id}">
+                            <td><strong>${escapeHtml(b.name) || '?'}</strong></td>
+                            <td class="url-cell"><a href="${escapeHtml(b.url)}" target="_blank" rel="noopener">${escapeHtml(b.url)}</a></td>
+                            <td>${formatDate(b.dateAdded)}</td>
+                            <td>${formatDate(b.dateModified)}</td>
+                            <td class="actions">
+                                <button class="openBtn" data-id="${b.id}" title="open in new tab">↗️ open</button>
+                                <button class="editBtn" data-id="${b.id}">✎ edit</button>
+                                <button class="deleteBtn" data-id="${b.id}">🗑️ delete</button>
+                            </td>
+                        </tr>`;
+                    });
+                    tbody.innerHTML = html;
+                }
+
+                document.getElementById('counter').innerText = `${filtered.length} / ${bookmarks.length} bookmark${bookmarks.length !== 1 ? 's' : ''}`;
+            }
+
+            function applyFiltersAndRender() {
+                renderTable();
+            }
+
+            // modal logic
+            const dialog = document.getElementById('bookmarkDialog');
+            const modalTitle = document.getElementById('modalTitle');
+            const editIdField = document.getElementById('editId');
+            const siteNameInput = document.getElementById('siteName');
+            const siteUrlInput = document.getElementById('siteUrl');
+            const form = document.getElementById('bookmarkForm');
+            const cancelBtn = document.getElementById('cancelDialog');
+
+            function openAddModal() {
+                modalTitle.innerText = '➕ new bookmark';
+                editIdField.value = '';
+                siteNameInput.value = '';
+                siteUrlInput.value = '';
+                dialog.showModal();
+            }
+
+            function openEditModal(id) {
+                const bookmark = bookmarks.find(b => b.id === id);
+                if (!bookmark) return;
+                modalTitle.innerText = '✎ edit bookmark';
+                editIdField.value = bookmark.id;
+                siteNameInput.value = bookmark.name || '';
+                siteUrlInput.value = bookmark.url || '';
+                dialog.showModal();
+            }
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = siteNameInput.value.trim();
+                const url = siteUrlInput.value.trim();
+                if (!name || !url) return;
+
+                const editId = editIdField.value;
+
+                const bookmarkData = { name, url };
+                if (editId) bookmarkData.id = editId;
+
+                await saveBookmark(bookmarkData);
+                dialog.close();
+            });
+
+            cancelBtn.addEventListener('click', () => dialog.close());
+
+            document.getElementById('tableBody').addEventListener('click', async (e) => {
+                const target = e.target;
+                const row = target.closest('tr');
+                if (!row) return;
+                const id = row.dataset.id;
+                const bookmark = bookmarks.find(b => b.id === id);
+                
+                if (target.classList.contains('openBtn')) {
+                    if (bookmark && bookmark.url) {
+                        window.open(bookmark.url, '_blank', 'noopener,noreferrer');
+                    }
+                } else if (target.classList.contains('editBtn')) {
+                    openEditModal(id);
+                } else if (target.classList.contains('deleteBtn')) {
+                    if (confirm('Delete this bookmark?')) {
+                        await deleteBookmark(id);
+                    }
+                }
+            });
+
+            document.getElementById('addBookmarkBtn').addEventListener('click', openAddModal);
+
+            document.getElementById('exportBtn').addEventListener('click', () => {
+                const dataStr = JSON.stringify(bookmarks, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `bookmarks_${new Date().toISOString().slice(0,10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+
+            initTheme();
+            setupFilters();
+            updateSortIndicators();
+            loadBookmarks();
+        })();
+    </script>
+</body>
+</html>
